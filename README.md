@@ -14,6 +14,8 @@ It aims to combine **climate data science**, **software craftsmanship**, and **c
 * Build a modular, transparent data-to-story pipeline usable by researchers, artists, and educators.
 * Serve as a **long-term learning project** in geospatial and data-driven storytelling.
 
+
+NB: I'm using copilot extensively, feel free to report any hallucinations or mistakes
 ---
 
 ## 🌍 Core Concept
@@ -215,7 +217,3 @@ Yuzu listens where satellites only measure.
 It translates the cold grammar of pixels into the warm syntax of memory, crafting stories that remind us the Earth is alive, still speaking — if we choose to hear it.
 
 > *“Forests fade in silence. Yuzu remembers their voices.”*
-
----
-
-Would you like me to now produce an **architecture diagram and prompt-handling flow** to pair with this Markdown? It would show exactly how data travels from ingestion → metrics → LLM → narrative output.
