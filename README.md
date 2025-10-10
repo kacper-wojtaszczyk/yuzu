@@ -122,7 +122,7 @@ Optional integrations:
 ---
 
 ## 🧱 Suggested Folder Structure
-
+```
 yuzu/
 ├── data/ — raw / processed datasets
 ├── notebooks/ — exploration & prototypes
@@ -142,7 +142,7 @@ yuzu/
 ├── tests/
 ├── docker-compose.yml
 └── README.md
-
+```
 ---
 
 ## 🧪 Example Metrics
