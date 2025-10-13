@@ -1,0 +1,128 @@
+[project]
+name = "yuzu"
+version = "0.1.0"
+description = "A living chronicle of the world's forests — environmental storytelling through satellite data"
+authors = [
+    {name = "Kacper Wojtaszczyk",email = "kacper.wojtaszczyk95@gmail.com"}
+]
+readme = "README.md"
+requires-python = ">=3.12,<3.13"
+dependencies = [
+    "geopandas>=1.0.1",
+    "pandas>=2.2.0",
+    "rasterio>=1.4.0",
+    "shapely>=2.0.6",
+    "xarray>=2024.9.0",
+    "psycopg[binary]>=3.2.0",
+    "sqlalchemy>=2.0.0",
+    "geoalchemy2>=0.15.0",
+    "pydantic>=2.9.0",
+    "pydantic-settings>=2.5.0",
+    "python-dotenv>=1.0.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.3.0",
+    "pytest-cov>=5.0.0",
+    "ruff>=0.7.0",
+    "mypy>=1.13.0",
+    "pandas-stubs>=2.2.0",
+    "types-requests>=2.32.0",
+]
+
+[build-system]
+requires = ["poetry-core>=2.0.0,<3.0.0"]
+build-backend = "poetry.core.masonry.api"
+
+# ===== Ruff Configuration =====
+[tool.ruff]
+target-version = "py312"
+line-length = 100
+src = ["src"]
+
+[tool.ruff.lint]
+select = [
+    "E",      # pycodestyle errors
+    "W",      # pycodestyle warnings
+    "F",      # pyflakes
+    "I",      # isort
+    "N",      # pep8-naming
+    "UP",     # pyupgrade
+    "B",      # flake8-bugbear
+    "C4",     # flake8-comprehensions
+    "SIM",    # flake8-simplify
+    "TCH",    # flake8-type-checking
+    "RUF",    # Ruff-specific rules
+]
+ignore = [
+    "E501",   # Line too long (handled by formatter)
+]
+
+[tool.ruff.lint.per-file-ignores]
+"__init__.py" = ["F401"]  # Allow unused imports in __init__.py
+"tests/**/*.py" = ["S101"]  # Allow assert in tests
+
+# ===== mypy Configuration =====
+[tool.mypy]
+python_version = "3.12"
+strict = true
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = true
+disallow_any_generics = true
+check_untyped_defs = true
+no_implicit_reexport = true
+warn_redundant_casts = true
+warn_unused_ignores = true
+warn_no_return = true
+plugins = ["pydantic.mypy"]
+
+# External libraries without stubs
+[[tool.mypy.overrides]]
+module = [
+    "geopandas.*",
+    "rasterio.*",
+    "shapely.*",
+    "xarray.*",
+    "geoalchemy2.*",
+]
+ignore_missing_imports = true
+
+# ===== pytest Configuration =====
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py", "*_test.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+addopts = [
+    "--strict-markers",
+    "--strict-config",
+    "--cov=src/yuzu",
+    "--cov-report=term-missing",
+    "--cov-report=html",
+]
+
+# ===== Coverage Configuration =====
+[tool.coverage.run]
+source = ["src"]
+omit = ["tests/*", "*/conftest.py"]
+
+[tool.coverage.report]
+exclude_lines = [
+    "pragma: no cover",
+    "def __repr__",
+    "if TYPE_CHECKING:",
+    "raise AssertionError",
+    "raise NotImplementedError",
+]
+
+[dependency-groups]
+dev = [
+    "pytest (>=8.4.2,<9.0.0)",
+    "pytest-cov (>=7.0.0,<8.0.0)",
+    "ruff (>=0.14.0,<0.15.0)",
+    "mypy (>=1.18.2,<2.0.0)",
+    "pandas-stubs (>=2.3.2.250926,<3.0.0.0)",
+    "types-requests (>=2.32.4.20250913,<3.0.0.0)"
+]
