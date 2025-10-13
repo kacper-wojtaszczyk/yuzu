@@ -57,4 +57,3 @@ docker-logs:  ## Show Docker logs
 
 db-shell:  ## Connect to PostgreSQL shell
 	docker compose exec postgres psql -U yuzu -d yuzu
-
