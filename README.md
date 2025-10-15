@@ -16,28 +16,6 @@ It aims to combine **climate data science**, **software craftsmanship**, and **c
 
 ---
 
-## 🌍 Geographic Scope
-
-**Yuzu currently focuses on tropical and subtropical forests between 30°N and 30°S latitude.**
-
-This covers approximately **60% of global deforestation** and includes the world's most biodiverse forest ecosystems:
-
-**✅ Included Regions:**
-- Amazon Basin (Brazil, Peru, Colombia, etc.)
-- Congo Basin (Central Africa)
-- Southeast Asia (Indonesia, Malaysia, Papua New Guinea)
-- Central America
-- West Africa
-- Madagascar
-
-**❌ Not Currently Covered:**
-- Boreal forests (Canada, Russia, Scandinavia, Alaska)
-- Temperate forests (US Pacific Northwest, Europe, China, Japan)
-
-**Why this limitation?** The real-time alert systems (GLAD and RADD) that enable 1-2 week latency were designed specifically for tropical deforestation monitoring. Global coverage may become feasible in the future as new alert systems emerge (see [ADR-001](docs/adr/ADR-001-real-time-forest-change-detection.md) for details).
-
----
-
 ## 🌍 Core Concept
 
 Yuzu continuously collects open geospatial data about forest health — canopy loss, fire events, rainfall anomalies, vegetation vigor — and synthesizes them into a story entry.
@@ -84,6 +62,28 @@ This achieves **1-4 week latency** for chronicles while maintaining accuracy thr
 See [ADR-001](docs/adr/ADR-001-real-time-forest-change-detection.md) for full rationale.
 
 All data are open and programmatically accessible via Google Earth Engine or direct APIs.
+
+---
+
+## 🌍 Geographic Scope
+
+**Yuzu currently focuses on tropical and subtropical forests between 30°N and 30°S latitude.**
+
+This covers approximately **60% of global deforestation** and includes the world's most biodiverse forest ecosystems:
+
+**✅ Included Regions:**
+- Amazon Basin (Brazil, Peru, Colombia, etc.)
+- Congo Basin (Central Africa)
+- Southeast Asia (Indonesia, Malaysia, Papua New Guinea)
+- Central America
+- West Africa
+- Madagascar
+
+**❌ Not Currently Covered:**
+- Boreal forests (Canada, Russia, Scandinavia, Alaska)
+- Temperate forests (US Pacific Northwest, Europe, China, Japan)
+
+**Why this limitation?** The real-time alert systems (GLAD and RADD) that enable 1-2 week latency were designed specifically for tropical deforestation monitoring. Global coverage may become feasible in the future as new alert systems emerge (see [ADR-001](docs/adr/ADR-001-real-time-forest-change-detection.md) for details).
 
 ---
 
