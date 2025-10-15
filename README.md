@@ -16,6 +16,28 @@ It aims to combine **climate data science**, **software craftsmanship**, and **c
 
 ---
 
+## 🌍 Geographic Scope
+
+**Yuzu currently focuses on tropical and subtropical forests between 30°N and 30°S latitude.**
+
+This covers approximately **60% of global deforestation** and includes the world's most biodiverse forest ecosystems:
+
+**✅ Included Regions:**
+- Amazon Basin (Brazil, Peru, Colombia, etc.)
+- Congo Basin (Central Africa)
+- Southeast Asia (Indonesia, Malaysia, Papua New Guinea)
+- Central America
+- West Africa
+- Madagascar
+
+**❌ Not Currently Covered:**
+- Boreal forests (Canada, Russia, Scandinavia, Alaska)
+- Temperate forests (US Pacific Northwest, Europe, China, Japan)
+
+**Why this limitation?** The real-time alert systems (GLAD and RADD) that enable 1-2 week latency were designed specifically for tropical deforestation monitoring. Global coverage may become feasible in the future as new alert systems emerge (see [ADR-001](docs/adr/ADR-001-real-time-forest-change-detection.md) for details).
+
+---
+
 ## 🌍 Core Concept
 
 Yuzu continuously collects open geospatial data about forest health — canopy loss, fire events, rainfall anomalies, vegetation vigor — and synthesizes them into a story entry.
@@ -44,15 +66,24 @@ NB: I'm using copilot extensively, feel free to report any hallucinations or mis
 
 ## 🗺️ Data Sources
 
-| Dataset               | Provider           | Format        | Purpose                                              |
-|-----------------------|--------------------|---------------|------------------------------------------------------|
-| Global Forest Watch   | Hansen et al., UMD | CSV / GeoTIFF | Annual canopy loss/gain per 30 m pixel               |
-| Copernicus Sentinel-2 | ESA                | GeoTIFF       | NDVI vegetation index                                |
-| NASA FIRMS            | NASA               | CSV / API     | Active fires and thermal anomalies                   |
-| ERA5 / CHIRPS         | Copernicus CDS     | NetCDF        | Rainfall and temperature anomalies                   |
-| ESA CCI Land Cover    | ESA                | NetCDF        | Land-use classes (forest, cropland, grassland, etc.) |
+| Dataset               | Provider           | Format        | Purpose                                              | Latency    |
+|-----------------------|--------------------|---------------|------------------------------------------------------|------------|
+| GLAD Alerts           | Hansen et al., UMD | GeoTIFF / GEE | Weekly forest disturbance detection (30m resolution) | 7-14 days  |
+| RADD Alerts           | Wageningen Univ.   | GeoTIFF / GEE | Radar-based disturbance (cloud-penetrating, 10m)     | 6-12 days  |
+| Global Forest Watch   | Hansen et al., UMD | CSV / GeoTIFF | Annual loss baseline & historical context (2000-2023)| 12-18 mo   |
+| Copernicus Sentinel-2 | ESA                | GeoTIFF       | NDVI vegetation index                                | 2-5 days   |
+| NASA FIRMS            | NASA               | CSV / API     | Active fires and thermal anomalies                   | <24 hours  |
+| ERA5 / CHIRPS         | Copernicus CDS     | NetCDF        | Rainfall and temperature anomalies                   | 5 days     |
+| ESA CCI Land Cover    | ESA                | NetCDF        | Land-use classes (forest, cropland, grassland, etc.) | Annual     |
 
-All data are open and programmatically accessible.
+**Data Strategy:** We use a **two-layer approach** for forest change:
+- **Real-time layer:** GLAD + RADD alerts detect disturbances within 1-2 weeks
+- **Baseline layer:** Annual GFW data provides historical context (2000-2023) and validation
+
+This achieves **1-4 week latency** for chronicles while maintaining accuracy through historical calibration.
+See [ADR-001](docs/adr/ADR-001-real-time-forest-change-detection.md) for full rationale.
+
+All data are open and programmatically accessible via Google Earth Engine or direct APIs.
 
 ---
 
@@ -383,7 +414,7 @@ docker compose --profile tools up -d
 
 Major design decisions are documented in `docs/adr/` following the format `ADR-XXX-short-title.md`.
 
-See [ADR-000: Template](docs/adr/000-template.md) for the standard format.
+See [ADR-000: Template](docs/adr/ADR-000-template.md) for the standard format.
 
 ---
 

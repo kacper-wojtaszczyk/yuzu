@@ -63,7 +63,7 @@ Create or update an ADR file in `docs/adr/`, using this naming convention:
 `ADR-<incremental integer padded with two zeros>-<short-title>.md`
 (e.g., `ADR-001-orchestration-framework.md`)
 
-Follow the [template in `docs/adr/000-template.md`](docs/adr/000-template.md).
+Follow the [template in `docs/adr/ADR-000-template.md`](docs/adr/000-template.md).
 Each ADR should include: **context**, **alternatives**, **decision**, and **consequences**.
 
 ### Step 5 — Implement minimally
