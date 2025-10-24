@@ -35,6 +35,7 @@ The goal: **learn new technologies, build cleanly, think deeply, and enjoy the p
 * Ask **one concise clarifying question** if something is unclear.
 * For any architectural or structural impact, create an **ADR** (Architecture Decision Record) before or alongside the implementation.
 * Be concise and clear — avoid filler and jargon.
+* **Focus on high-level ideas** and architecture discussions. Use small, targeted code excerpts only to illustrate specific points. Avoid generating complete file implementations in chat—we'll work on actual files together during implementation.
 
 ---
 

@@ -325,8 +325,6 @@ poetry run pytest --cov=src/yuzu --cov-report=html
 poetry run pytest tests/test_config.py -v
 ```
 
-Current test coverage: **87%**
-
 ### Code Quality
 
 This project uses:
@@ -355,15 +353,6 @@ docker compose exec postgres psql -U yuzu -d yuzu
 
 # Stop services
 docker compose down
-```
-
-**Optional pgAdmin (database UI):**
-```bash
-# Start with tools profile
-docker compose --profile tools up -d
-
-# Access at: http://localhost:5050
-# Credentials: admin@yuzu.local / admin
 ```
 
 ---

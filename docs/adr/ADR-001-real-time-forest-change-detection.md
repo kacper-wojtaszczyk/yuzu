@@ -53,12 +53,22 @@ This limitation is inherent to the chosen real-time alert systems (GLAD and RADD
 We will adopt a **hybrid two-layer architecture**:
 
 ### Layer 1: Historical Baseline (Annual)
-- **Source**: Hansen/UMD GFW tree cover loss (2000-2023)
+- **Source**: Hansen/UMD GFW tree cover loss (2000-2024, v1.12)
+- **Access method**: Google Earth Engine Python API
+  - Asset ID: `UMD/hansen/global_forest_change_2024_v1_12`
+  - Requires GEE account and project ID
+- **Temporal resolution**: Annual only (no sub-annual data available)
+  - Hansen dataset reports year of loss, not month/week
+  - Attempting finer granularity would be inventing data
 - **Purpose**: 
-  - Establish historical loss rates per region
-  - Validate and calibrate real-time alerts
+  - Establish annual historical loss rates per region
+  - Validate and calibrate real-time alerts (when multi-year alert data accumulates)
   - Provide multi-decade context for narratives
-- **Update frequency**: Yearly (when new GFW data releases)
+- **Update frequency**: Manual extraction when new GFW data releases (typically September)
+- **Configuration**:
+  - Tree cover threshold: 30% canopy cover (configurable per region)
+  - Year range: Parameterized (extract 1-2 years at a time for testing, full 2000-2024 for production)
+  - Coordinate system: WGS84 (EPSG:4326)
 
 ### Layer 2: Near-Real-Time Disturbances (Weekly)
 - **Primary source**: GLAD alerts (University of Maryland via Google Earth Engine)
@@ -243,25 +253,54 @@ Review this decision if:
 
 ### Data Schema
 ```sql
--- Historical baseline
+-- Region definitions with geometry
+CREATE TABLE forest_regions (
+    region_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    region_name VARCHAR(255) NOT NULL,
+    region_type VARCHAR(50),  -- 'country', 'state', 'protected_area', 'custom'
+    geometry GEOMETRY(MULTIPOLYGON, 4326) NOT NULL,
+    
+    -- Config overrides (NULL = use defaults)
+    tree_cover_threshold INT,  -- Override global 30% default if needed
+    baseline_year INT DEFAULT 2000,
+    
+    -- Metadata
+    created_at TIMESTAMP DEFAULT NOW(),
+    updated_at TIMESTAMP DEFAULT NOW()
+);
+
+-- Historical baseline (Hansen GFW)
 CREATE TABLE forest_annual_loss (
-    region_id UUID,
-    year INT,
-    loss_km2 NUMERIC,
-    loss_pct NUMERIC,
+    region_id UUID REFERENCES forest_regions(region_id),
+    year INT NOT NULL,
+    
+    -- Metrics
+    loss_km2 NUMERIC(10, 3) NOT NULL,
+    baseline_cover_km2 NUMERIC(10, 3) NOT NULL,  -- Year 2000 baseline
+    
+    -- Provenance tracking
+    tree_cover_threshold INT NOT NULL,
+    dataset_version VARCHAR(20) NOT NULL,
+    extracted_at TIMESTAMP DEFAULT NOW(),
+    
     PRIMARY KEY (region_id, year)
 );
 
--- Real-time alerts
+-- Real-time alerts (Phase 2 - future)
 CREATE TABLE forest_disturbance_alerts (
-    region_id UUID,
-    week_ending DATE,
-    glad_alerts_km2 NUMERIC,
-    radd_alerts_km2 NUMERIC,
-    combined_disturbance_km2 NUMERIC,
+    region_id UUID REFERENCES forest_regions(region_id),
+    week_ending DATE NOT NULL,
+    glad_alerts_km2 NUMERIC(10, 3),
+    radd_alerts_km2 NUMERIC(10, 3),
+    combined_disturbance_km2 NUMERIC(10, 3),
     confidence_level VARCHAR(10), -- 'high', 'medium', 'low'
     PRIMARY KEY (region_id, week_ending)
 );
+
+-- Indexes for common queries
+CREATE INDEX idx_annual_loss_year ON forest_annual_loss(year);
+CREATE INDEX idx_regions_name ON forest_regions(region_name);
+CREATE INDEX idx_regions_geom ON forest_regions USING GIST(geometry);
 
 -- Derived metrics for narratives
 CREATE VIEW current_year_activity AS
