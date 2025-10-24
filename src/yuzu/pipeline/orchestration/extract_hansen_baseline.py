@@ -19,6 +19,7 @@ Requirements:
 import argparse
 import logging
 import sys
+from typing import Any
 from uuid import UUID
 
 import pandas as pd
@@ -30,13 +31,12 @@ from yuzu.pipeline.ingestion.hansen_baseline import RegionExtraction, extract_re
 
 # Configure logging
 logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+    level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
 )
 logger = logging.getLogger(__name__)
 
 
-def load_region_geometry(region_id: UUID) -> tuple[str, str, dict]:
+def load_region_geometry(region_id: UUID) -> tuple[str, str, dict[str, Any]]:
     """Load region metadata and geometry from database.
 
     Args:
@@ -58,13 +58,14 @@ def load_region_geometry(region_id: UUID) -> tuple[str, str, dict]:
                 FROM forest.forest_regions
                 WHERE region_id = :region_id
             """),
-            {"region_id": str(region_id)}
+            {"region_id": str(region_id)},
         ).fetchone()
 
         if not result:
             raise ValueError(f"Region {region_id} not found in forest.forest_regions table")
 
         import json
+
         return result.region_name, result.region_type, json.loads(result.geometry)
 
 
@@ -86,10 +87,10 @@ def store_results(df: pd.DataFrame) -> None:
         for _, row in df.iterrows():
             conn.execute(
                 text("""
-                    INSERT INTO forest.forest_annual_loss 
-                    (region_id, year, loss_km2, baseline_cover_km2, 
+                    INSERT INTO forest.forest_annual_loss
+                    (region_id, year, loss_km2, baseline_cover_km2,
                      tree_cover_threshold, dataset_version)
-                    VALUES 
+                    VALUES
                     (CAST(:region_id AS uuid), :year, :loss_km2, :baseline_cover_km2,
                      :tree_cover_threshold, :dataset_version)
                 """),
@@ -100,7 +101,7 @@ def store_results(df: pd.DataFrame) -> None:
                     "baseline_cover_km2": float(row["baseline_cover_km2"]),
                     "tree_cover_threshold": int(row["tree_cover_threshold"]),
                     "dataset_version": row["dataset_version"],
-                }
+                },
             )
         conn.commit()
 
@@ -137,43 +138,35 @@ Examples:
       --start-year 2023 \\
       --end-year 2024 \\
       --dry-run
-        """
+        """,
     )
 
     parser.add_argument(
         "--region-id",
         type=UUID,
         required=True,
-        help="UUID of the region (from forest.forest_regions table)"
+        help="UUID of the region (from forest.forest_regions table)",
     )
     parser.add_argument(
         "--start-year",
         type=int,
         default=2023,
-        help="First year to extract (inclusive, default: 2023)"
+        help="First year to extract (inclusive, default: 2023)",
     )
     parser.add_argument(
-        "--end-year",
-        type=int,
-        default=2024,
-        help="Last year to extract (inclusive, default: 2024)"
+        "--end-year", type=int, default=2024, help="Last year to extract (inclusive, default: 2024)"
     )
     parser.add_argument(
         "--threshold",
         type=int,
         default=None,
-        help="Tree cover threshold %% (default: use config value, typically 30)"
+        help="Tree cover threshold %% (default: use config value, typically 30)",
     )
     parser.add_argument(
-        "--dry-run",
-        action="store_true",
-        help="Extract data but don't store in database"
+        "--dry-run", action="store_true", help="Extract data but don't store in database"
     )
     parser.add_argument(
-        "--output",
-        type=str,
-        default=None,
-        help="Save results to CSV file (optional)"
+        "--output", type=str, default=None, help="Save results to CSV file (optional)"
     )
 
     args = parser.parse_args()
@@ -196,7 +189,7 @@ Examples:
             geometry=geometry,
             start_year=args.start_year,
             end_year=args.end_year,
-            tree_cover_threshold=args.threshold
+            tree_cover_threshold=args.threshold,
         )
 
         # Step 4: Extract data from GEE
@@ -204,16 +197,18 @@ Examples:
         df = extract_region(params, ee_context)
 
         # Step 5: Display summary
-        logger.info("\n" + "="*60)
+        logger.info("\n" + "=" * 60)
         logger.info(f"Extraction Summary for {region_name}")
-        logger.info("="*60)
+        logger.info("=" * 60)
         logger.info(f"Years extracted: {args.start_year}-{args.end_year}")
         logger.info(f"Baseline (2000): {df['baseline_cover_km2'].iloc[0]:.2f} km²")
         logger.info(f"Total loss: {df['loss_km2'].sum():.2f} km²")
-        logger.info(f"Loss rate: {df['loss_km2'].sum() / df['baseline_cover_km2'].iloc[0] * 100:.2f}%")
+        logger.info(
+            f"Loss rate: {df['loss_km2'].sum() / df['baseline_cover_km2'].iloc[0] * 100:.2f}%"
+        )
         logger.info(f"Tree cover threshold: {df['tree_cover_threshold'].iloc[0]}%")
         logger.info(f"Dataset version: {df['dataset_version'].iloc[0]}")
-        logger.info("="*60 + "\n")
+        logger.info("=" * 60 + "\n")
 
         # Step 6: Save to CSV if requested
         if args.output:
@@ -237,4 +232,3 @@ Examples:
 
 if __name__ == "__main__":
     sys.exit(main())
-

@@ -9,13 +9,17 @@ All functions require an initialized EarthEngineContext (see earth_engine.py).
 import logging
 import time
 from dataclasses import dataclass
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 import ee
 import pandas as pd
 
-from yuzu.config import get_settings
+from yuzu.config import Settings, get_settings
 from yuzu.pipeline.ingestion.earth_engine import EarthEngineContext
+
+if TYPE_CHECKING:
+    from ee.geometry import Geometry
+    from ee.image import Image
 
 logger = logging.getLogger(__name__)
 
@@ -55,10 +59,7 @@ class RegionExtraction:
             )
 
 
-def extract_region(
-    params: RegionExtraction,
-    ee_context: EarthEngineContext
-) -> pd.DataFrame:
+def extract_region(params: RegionExtraction, ee_context: EarthEngineContext) -> pd.DataFrame:
     """Extract annual forest loss data for a region.
 
     This function:
@@ -96,19 +97,19 @@ def extract_region(
         >>> df = extract_region(params, ee_ctx)
     """
     logger.info(
-        f"Extracting GFW baseline for {params.region_name} "
-        f"({params.start_year}-{params.end_year})"
+        f"Extracting GFW baseline for {params.region_name} ({params.start_year}-{params.end_year})"
     )
 
-    region = ee.Geometry(params.geometry)
+    region = ee.Geometry(params.geometry)  # type: ignore[attr-defined]
     hansen = ee_context.hansen
     settings = ee_context.settings
 
     # Calculate year 2000 baseline once
+    # tree_cover_threshold is guaranteed to be int after __post_init__
+    assert params.tree_cover_threshold is not None
     baseline_km2 = _calculate_baseline(region, params.tree_cover_threshold, hansen, settings)
     logger.info(
-        f"Year 2000 baseline: {baseline_km2:.2f} km² "
-        f"(threshold: {params.tree_cover_threshold}%)"
+        f"Year 2000 baseline: {baseline_km2:.2f} km² (threshold: {params.tree_cover_threshold}%)"
     )
 
     # Extract loss by year
@@ -117,15 +118,17 @@ def extract_region(
         loss_km2 = _calculate_loss_for_year(region, year, hansen, settings)
         logger.debug(f"Year {year}: {loss_km2:.3f} km² loss")
 
-        results.append({
-            "region_id": params.region_id,
-            "region_name": params.region_name,
-            "year": year,
-            "loss_km2": loss_km2,
-            "baseline_cover_km2": baseline_km2,
-            "tree_cover_threshold": params.tree_cover_threshold,
-            "dataset_version": settings.hansen_dataset_version,
-        })
+        results.append(
+            {
+                "region_id": params.region_id,
+                "region_name": params.region_name,
+                "year": year,
+                "loss_km2": loss_km2,
+                "baseline_cover_km2": baseline_km2,
+                "tree_cover_threshold": params.tree_cover_threshold,
+                "dataset_version": settings.hansen_dataset_version,
+            }
+        )
 
     df = pd.DataFrame(results)
     logger.info(
@@ -136,10 +139,7 @@ def extract_region(
 
 
 def _calculate_baseline(
-    region: ee.Geometry,
-    threshold: int,
-    hansen: ee.Image,
-    settings: object
+    region: "Geometry", threshold: int, hansen: "Image", settings: Settings
 ) -> float:
     """Calculate year 2000 forest area in km².
 
@@ -159,16 +159,13 @@ def _calculate_baseline(
     forest_mask = treecover.gte(threshold)
 
     # Convert pixel count to km² (pixelArea() returns m²)
-    area_img = forest_mask.multiply(ee.Image.pixelArea()).divide(1e6)
+    area_img = forest_mask.multiply(ee.Image.pixelArea()).divide(1e6)  # type: ignore[attr-defined]
 
     return _reduce_region_with_retry(area_img, region, "treecover2000", settings)
 
 
 def _calculate_loss_for_year(
-    region: ee.Geometry,
-    year: int,
-    hansen: ee.Image,
-    settings: object
+    region: "Geometry", year: int, hansen: "Image", settings: Settings
 ) -> float:
     """Calculate forest loss area for a specific year in km².
 
@@ -195,16 +192,13 @@ def _calculate_loss_for_year(
     loss_mask = lossyear.eq(year_code)
 
     # Convert pixel count to km²
-    area_img = loss_mask.multiply(ee.Image.pixelArea()).divide(1e6)
+    area_img = loss_mask.multiply(ee.Image.pixelArea()).divide(1e6)  # type: ignore[attr-defined]
 
     return _reduce_region_with_retry(area_img, region, "lossyear", settings)
 
 
 def _reduce_region_with_retry(
-    image: ee.Image,
-    geometry: ee.Geometry,
-    band_name: str,
-    settings: object
+    image: "Image", geometry: "Geometry", band_name: str, settings: Settings
 ) -> float:
     """Execute GEE reduceRegion with exponential backoff retry logic.
 
@@ -223,16 +217,18 @@ def _reduce_region_with_retry(
     for attempt in range(settings.gee_max_retries):
         try:
             stats = image.reduceRegion(
-                reducer=ee.Reducer.sum(),
+                reducer=ee.Reducer.sum(),  # type: ignore[attr-defined]
                 geometry=geometry,
                 scale=settings.gee_scale_meters,
                 maxPixels=settings.gee_max_pixels,
             )
 
             result = stats.getInfo()
+            if result is None:
+                return 0.0
             return float(result.get(band_name, 0.0))
 
-        except ee.EEException as e:
+        except ee.EEException as e:  # type: ignore[attr-defined]
             if attempt < settings.gee_max_retries - 1:
                 wait_time = settings.gee_backoff_factor**attempt
                 logger.warning(
@@ -242,13 +238,10 @@ def _reduce_region_with_retry(
                 )
                 time.sleep(wait_time)
             else:
-                logger.error(
-                    f"GEE request failed after {settings.gee_max_retries} attempts"
-                )
+                logger.error(f"GEE request failed after {settings.gee_max_retries} attempts")
                 raise RuntimeError(
                     f"Failed to compute {band_name} after {settings.gee_max_retries} retries"
                 ) from e
 
     # Should never reach here, but satisfy type checker
     raise RuntimeError("Unexpected retry loop exit")
-

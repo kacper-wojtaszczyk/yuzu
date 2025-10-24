@@ -10,10 +10,14 @@ in a clean interface to make dependencies explicit and testing easier.
 
 import logging
 from dataclasses import dataclass, field
+from typing import TYPE_CHECKING
 
 import ee
 
-from yuzu.config import get_settings
+from yuzu.config import Settings, get_settings
+
+if TYPE_CHECKING:
+    from ee.image import Image
 
 logger = logging.getLogger(__name__)
 
@@ -35,13 +39,13 @@ class EarthEngineContext:
     """
 
     project_id: str
-    settings: object = field(repr=False)
+    settings: Settings = field(repr=False)
 
     # Dataset references (lazy-loaded)
-    _hansen: ee.Image | None = field(default=None, init=False, repr=False)
+    _hansen: "Image | None" = field(default=None, init=False, repr=False)
 
     @property
-    def hansen(self) -> ee.Image:
+    def hansen(self) -> "Image":
         """Hansen Global Forest Change dataset (lazy-loaded).
 
         Returns:
@@ -49,9 +53,8 @@ class EarthEngineContext:
         """
         if self._hansen is None:
             logger.debug(f"Loading Hansen dataset: {self.settings.hansen_asset_id}")
-            self._hansen = ee.Image(self.settings.hansen_asset_id)
+            self._hansen = ee.Image(self.settings.hansen_asset_id)  # type: ignore[attr-defined]
         return self._hansen
-
 
 
 def initialize_earth_engine(project_id: str | None = None) -> EarthEngineContext:
@@ -100,7 +103,7 @@ def initialize_earth_engine(project_id: str | None = None) -> EarthEngineContext
     try:
         ee.Initialize(project=pid)
         logger.info(f"Earth Engine initialized successfully with project: {pid}")
-    except ee.EEException as e:
+    except ee.EEException as e:  # type: ignore[attr-defined]
         logger.error(f"Failed to initialize Earth Engine: {e}")
         raise RuntimeError(
             f"Earth Engine initialization failed. Ensure you have:\n"
@@ -110,4 +113,3 @@ def initialize_earth_engine(project_id: str | None = None) -> EarthEngineContext
         ) from e
 
     return EarthEngineContext(project_id=pid, settings=settings)
-
