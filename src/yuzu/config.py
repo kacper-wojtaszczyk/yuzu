@@ -85,9 +85,7 @@ class Settings(BaseSettings):
     )
 
     # Hansen GFW Configuration
-    hansen_dataset_version: str = Field(
-        default="v1.12", description="Hansen GFW dataset version"
-    )
+    hansen_dataset_version: str = Field(default="v1.12", description="Hansen GFW dataset version")
     hansen_asset_id: str = Field(
         default="UMD/hansen/global_forest_change_2024_v1_12",
         description="Google Earth Engine asset ID for Hansen dataset",
@@ -101,9 +99,7 @@ class Settings(BaseSettings):
     gee_scale_meters: int = Field(
         default=30, description="Processing scale in meters (Hansen native resolution)"
     )
-    gee_max_pixels: int = Field(
-        default=1_000_000_000, description="Maximum pixels per GEE request"
-    )
+    gee_max_pixels: int = Field(default=1_000_000_000, description="Maximum pixels per GEE request")
     gee_request_timeout_sec: int = Field(
         default=300, description="GEE API request timeout in seconds"
     )
