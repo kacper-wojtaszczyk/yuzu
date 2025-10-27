@@ -4,15 +4,29 @@
 
 **Yuzu** is an open-source experiment in environmental storytelling — a data pipeline that listens to forests through satellite data, then retells what it hears as evolving, human-readable stories.
 
-Instead of dashboards or static reports, Yuzu produces *chronicles*: daily or weekly narrative entries that describe how a forest's canopy, rainfall, and fire activity are changing.
+Instead of dashboards or static reports, Yuzu produces *chronicles*: **weekly narrative entries** that describe how a forest's canopy, rainfall, and fire activity are changing.
 It aims to combine **climate data science**, **software craftsmanship**, and **creative writing** into one unified system — where code gives nature a voice.
+
+### 🎯 The Ultimate Vision
+
+**Inspiration:** [Global Forest Review by WRI](https://gfr.wri.org/latest-analysis-deforestation-trends)
+
+Yuzu aspires to become an **AI-powered forest change newsletter** that:
+
+- **Replaces human journalists with AI** for narrative generation (while maintaining journalistic rigor)
+- **Publishes weekly** instead of quarterly or annually — higher cadence, more timely stories
+- **Prioritizes emotional impression over data presentation** — like an impressionist painting of forest change
+- **Makes forest loss visceral and urgent** by translating statistics into felt experience
+
+*"What if WRI's data-driven forest analysis was reimagined as AI-generated prose that painted the feeling of loss, published every week?"*
 
 ### 🎯 Objectives
 
 * Turn satellite and climate data into **legible, emotional, narrative artifacts**.
 * Explore how **LLMs can serve as translators between data and human language**.
-* Build a modular, transparent data-to-story pipeline usable by researchers, artists, and educators.
+* Build a modular, transparent data-to-story pipeline usable by researchers, artists, and educators (stretch goal lol)
 * Serve as a **long-term learning project** in geospatial and data-driven storytelling.
+* **(Dis-)prove that AI can create environmental journalism that moves people to care.**
 
 ---
 
@@ -30,11 +44,15 @@ Each forest (e.g., Amazon, Borneo, Congo Basin) has its own timeline of prose an
 > *"The forest whispered in smoke again, waiting for rain."*
 
 ---
+## 🚧 Status
 
-## 🪞 Project Philosophy
+Currently being evaluated in [ADR-001](docs/adr/ADR-001-real-time-forest-change-detection.md)
 
-1. **Truth first, poetry second.** Stories are grounded in data, never fabricated.
-2. **Machine as interpreter, not author.** The LLM translates numbers into language; it doesn't invent events.
+We're searching for a primary forest data source that balances:
+- **Accessibility** (clear API, good docs)
+- **Update frequency** (weekly cadence for timely narratives)
+- **Data quality** (consistent methodology, minimal false positives)
+- **Emotional richness** (metrics that tell compelling human stories)
 3. **Transparency over magic.** Every sentence can be traced back to measurable data.
 4. **Beauty through structure.** Pipelines and prose are both crafted systems.
 
