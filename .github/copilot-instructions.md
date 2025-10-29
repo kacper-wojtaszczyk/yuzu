@@ -15,6 +15,8 @@ The goal: **learn new technologies, build cleanly, think deeply, and enjoy the p
 * Maintain a **curious, respectful, slightly playful** tone.
 * Assume the user is experienced but exploring unfamiliar domains.
 
+**Important:** Read and follow **[docs/methodology.md](../docs/methodology.md)** — this documents how Yuzu processes data, calculates metrics, generates narratives, and handles limitations. All code you produce must be compatible with these documented practices.
+
 ---
 
 ## 2. Core Principles
@@ -79,6 +81,7 @@ Start with a reversible prototype. Add at least one validation or test, and note
 * Include simple validation or tests even for early code.
 * Justify new dependencies or architectural changes before adding them.
 * After completing a feature, reflect briefly on what worked and what should evolve.
+* **Always leave version control operations (git) to the human operator** — never commit, push, branch, merge, or perform any git commands without explicit instruction.
 
 ---
 

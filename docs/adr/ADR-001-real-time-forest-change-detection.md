@@ -136,10 +136,12 @@ Before building anything, we need **one reliable data source** that:
   - Nature Trace Natural Forest 2020: `ee.ImageCollection("projects/nature-trace/assets/forest_typology/natural_forest_2020_v1_0_collection")`
   - JRC GFC2020 V2: `ee.ImageCollection("JRC/GFC2020/V2")`
   - Others available in Earth Engine catalog
-- **Alerts:** GFW Data Portal (tile-based download system, no proper API)
-  - Must click individual tiles, copy URL from popup, download manually
+- **Alerts:** GFW Data Portal + REST API (tile-based download system)
+  - REST API exists but only exposes metadata and tile download links
+  - Can be automated but requires significant effort (tile management, downloads, stitching)
+  - Alternative: Manual click individual tiles, copy URL from popup
   - Special integer encoding: leading digit = confidence (2=low, 3=high, 4=highest), followed by days since Dec 31, 2014
-- **API/SDK:** Earth Engine Python/JavaScript for baseline; manual tile download for alerts
+- **API/SDK:** Earth Engine Python/JavaScript for baseline; GFW REST API + tile downloads for alerts
 - **Documentation:** Good for baselines (Earth Engine docs); alerts documentation sparse, data portal clunky
 - **Rate limits:** Standard Earth Engine limits for baseline; manual download bottleneck for alerts
 - **Authentication:** Earth Engine account for baseline; GFW account for alerts portal
@@ -167,9 +169,9 @@ Before building anything, we need **one reliable data source** that:
 
 **Developer experience:**
 - **Baseline pleasant:** Earth Engine access, well-documented, probabilistic maps allow threshold customization
-- **Alerts painful:** Manual tile-by-tile download, no proper API, requires decoding integer format
+- **Alerts painful:** Tile-based architecture, REST API only provides metadata/links, requires custom tile management
 - **Gotchas:**
-  - **No proper alerts API:** Must manually click tiles, copy URLs, download individually
+  - **Tile-based REST API:** API exists but only returns metadata and download links; must build tile management system
   - **Complex encoding:** Each pixel is an integer where leading digit = confidence, rest = days since 2014-12-31
   - **Heterogeneous sources:** Three different alert systems with different coverage/dates
   - **Coverage gaps:** Not all regions have all alert systems; temporal coverage varies by location
@@ -189,7 +191,7 @@ Before building anything, we need **one reliable data source** that:
 - **Free and open:** Both baseline and alerts are publicly accessible
 
 **Cons:**
-- **Critical: No real API for alerts:** Manual tile download is a massive workflow bottleneck
+- **Critical: Tile-based API architecture:** REST API exists but only provides metadata/links; requires building tile management system (download, stitch, spatial queries)
 - **Complex data encoding:** Integer format requires decoding logic (date calculation + confidence extraction)
 - **Regional coverage gaps:** Alert system coverage varies dramatically by location and time
 - **No baseline flexibility:** Locked to 2020; cannot reframe to "beginning of year" or other custom dates
@@ -209,7 +211,7 @@ Before building anything, we need **one reliable data source** that:
 - Single-region monitoring where tile management is feasible
 
 **Worst for:**
-- **Automated pipelines:** Manual tile download kills automation
+- **Automated pipelines:** Tile-based architecture requires significant engineering effort to automate properly
 - Flexible temporal baselines (e.g., year-to-date comparisons)
 - Large-scale or multi-region monitoring (too many tiles to manage)
 - Weekly narratives requiring frequent data refreshes

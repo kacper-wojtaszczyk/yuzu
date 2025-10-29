@@ -18,8 +18,6 @@ Yuzu aspires to become an **AI-powered forest change newsletter** that:
 - **Prioritizes emotional impression over data presentation** — like an impressionist painting of forest change
 - **Makes forest loss visceral and urgent** by translating statistics into felt experience
 
-*"What if WRI's data-driven forest analysis was reimagined as AI-generated prose that painted the feeling of loss, published every week?"*
-
 ### 🎯 Objectives
 
 * Turn satellite and climate data into **legible, emotional, narrative artifacts**.
@@ -105,7 +103,7 @@ This covers approximately **60% of global deforestation** and includes the world
 
 ---
 
-## 🧰 Technology Stack
+## 🧪 Technology Stack
 
 | Layer                         | Technologies                                                  | Purpose                                        |
 |-------------------------------|---------------------------------------------------------------|------------------------------------------------|
@@ -176,7 +174,7 @@ Optional integrations:
 
 ---
 
-## 🧱 Project Structure
+## 🧭 Project Structure
 
 ```
 yuzu/
@@ -221,7 +219,7 @@ yuzu/
 
 ---
 
-## 🪄 Narrative Generation Logic
+## 🧠 Narrative Generation Logic
 
 The **storytelling subsystem** transforms computed metrics into structured text.
 It works in three layers:
@@ -245,7 +243,7 @@ Result:
 
 ---
 
-## 🧭 Design Principles
+## 🧩 Design Principles
 
 * **Provider-agnostic AI layer** — compatible with any LLM backend (API key defined in config).
 * **Human-verifiable output** — all text tied to traceable metrics.
@@ -398,6 +396,7 @@ docker compose --profile tools up -d
 
 ## 📚 References & Inspiration
 
+* **[Yuzu Methodology](docs/methodology.md)** — How Yuzu processes data and generates narratives
 * Global Forest Watch — [https://data.globalforestwatch.org/](https://data.globalforestwatch.org/)
 * NASA FIRMS — [https://firms.modaps.eosdis.nasa.gov/](https://firms.modaps.eosdis.nasa.gov/)
 * Copernicus Data Space — [https://dataspace.copernicus.eu/](https://dataspace.copernicus.eu/)
@@ -428,11 +427,15 @@ docker compose --profile tools up -d
 
 ---
 
-## 📚 Architecture Decisions
+## 🏛️ Architecture Decisions
 
 Major design decisions are documented in `docs/adr/` following the format `ADR-XXX-short-title.md`.
 
 See [ADR-000: Template](docs/adr/ADR-000-template.md) for the standard format.
+
+New: [ADR-002 — Library-first architecture with a thin FastAPI API added later](docs/adr/ADR-002-library-first-architecture-and-api.md)
+
+**Methodology:** See [docs/methodology.md](docs/methodology.md) for a detailed explanation of how Yuzu processes data and generates narratives, including data sources, calculations, LLM integration, limitations, and quality assurance.
 
 ---
 
