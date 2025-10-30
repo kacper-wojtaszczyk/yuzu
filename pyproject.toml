@@ -19,6 +19,7 @@ dependencies = [
     "pydantic>=2.9.0",
     "pydantic-settings>=2.5.0",
     "python-dotenv>=1.0.0",
+    "earthengine-api>=1.0.0",
 ]
 
 [project.optional-dependencies]
@@ -86,6 +87,8 @@ module = [
     "shapely.*",
     "xarray.*",
     "geoalchemy2.*",
+    "ee",
+    "ee.*",
 ]
 ignore_missing_imports = true
 
