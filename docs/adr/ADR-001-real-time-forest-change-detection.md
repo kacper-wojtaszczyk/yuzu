@@ -1,8 +1,12 @@
 # ADR-001: Choosing a Primary Forest Data Source
 
-**Date:** 2025-10-27  
-**Status:** Proposed  
+**Date:** 2025-10-30  
+**Status:** In Progress - Prototyping Phase  
 **Authors:** Kacper Wojtaszczyk & AI Copilot
+
+**Update History:**
+- 2025-10-27: Initial draft with three candidate sources
+- 2025-10-30: Added GDW experimental results and hybrid GDW + DIST-ALERT approach
 
 ---
 
@@ -298,6 +302,230 @@ Before building anything, we need **one reliable data source** that:
 - Organizations without GPU infrastructure or cloud compute budget
 - Projects requiring immediate results or weekly narratives
 - Teams that want to focus on storytelling, not ML engineering
+
+---
+
+## Experimental Results: Google Dynamic World Prototype
+
+### What We Built
+
+A prototype pipeline (`src/yuzu/pipeline/orchestration/extract_forest_metrics.py`) that:
+- Aggregates Dynamic World data over configurable time windows (default: 30 days)
+- Uses `mode()` for land cover label and `mean()` for tree probability
+- Applies threshold-based forest classification (tested: 0.15, 0.3, 0.4, 0.5)
+- Implements adaptive gap-filling: fills cloud-obscured pixels with most recent valid historical data
+- Calculates forest area (hectares) for each period
+- Tracks image availability and coverage completeness
+
+### Key Findings
+
+**✅ Gap-Filling Works:** Successfully achieved ~100% coverage across all periods by filling cloud gaps with historical aggregates.
+
+**✅ Data Access:** Earth Engine integration is smooth, well-documented, and performant.
+
+**❌ HIGH VOLATILITY (44.4% of average):** Forest area swings dramatically between periods:
+- **Example (434,687 ha region over 23 months):**
+  - Peak: 281,682 ha (April 2024)
+  - Trough: 180,235 ha (November 2024)
+  - Volatility: 101,447 ha (44.4% of mean)
+  - Year-over-year similar month comparison still shows 10-20% variation
+
+**Root Cause Analysis:**
+
+1. **Seasonal Phenology Dominates Signal**
+   - Dry season (Jul-Sep): Trees lose leaves, lower canopy cover → lower tree probability
+   - Wet season (Dec-Mar): Full canopy → higher tree probability
+   - Even with gap-filling and threshold adjustments, seasonal cycles persist
+
+**2. Threshold Sensitivity**
+   - Tested thresholds: 0.1, 0.15, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8
+   - Lower thresholds (0.1-0.3): More stable but include sparse vegetation
+   - Mid thresholds (0.4-0.5): Balanced but still show seasonal swings
+   - Higher thresholds (0.6-0.8): Capture only dense forest but amplify seasonal effects
+   - **No threshold value eliminates volatility**
+
+3. **Label-Only Approach Also Fails**
+   - Using only `label` band (most probable class) without confidence threshold
+   - Still shows 30-40% volatility
+   - Indicates issue is in the underlying classification, not our processing
+
+4. **Geographic Consistency**
+   - Tested multiple regions (Pará/Amazonas border, São Felix do Xingu, Paraná Atlantic Forest)
+   - All show similar volatility patterns
+   - Rules out region-specific issues
+
+### Critical Limitation
+
+**Dynamic World cannot reliably separate deforestation from seasonal variation** at weekly/monthly timescales.
+
+- Year-over-year comparisons of same season: Still 10-20% unexplained variation
+- Even multi-year baselines won't eliminate within-year volatility needed for weekly narratives
+- Would require complex seasonal decomposition models beyond MVP scope
+
+**Conclusion:** Dynamic World alone is insufficient for near-real-time deforestation monitoring. We need a complementary approach.
+
+---
+
+### Hybrid Approach: Google Dynamic World + GLAD DIST-ALERT
+
+**Summary:** Use Dynamic World for long-term baseline assessment and DIST-ALERT for near-real-time disturbance detection. This separates concerns: stable baselines from volatile change detection.
+
+**Architecture:**
+1. **Baseline Layer (Dynamic World):** Annual or seasonal forest cover maps aggregated over long periods (3-6 months)
+2. **Change Detection (DIST-ALERT):** Daily disturbance alerts indicating vegetation loss relative to 3-year historical baseline
+
+**DIST-ALERT Overview:**
+
+**Data characteristics:**
+- **Source:** GLAD/UMD OPERA project, NASA JPL
+- **Temporal coverage:** 2022-01-01 to present
+- **Update frequency:** Daily (1-day temporal resolution)
+- **Spatial resolution:** 30m (Landsat + Sentinel-2 HLS fusion)
+- **Geographic coverage:** Global land
+- **Algorithm:** 
+  - Detects vegetation loss relative to 3-year rolling baseline (31-day window)
+  - Reports: vegetation cover % reduction, spectral anomaly distance
+  - Baseline: All cloud-free observations from previous 3 years in 31-day window
+- **Output metrics:**
+  - Disturbance status (0-4: no disturbance, provisional, confirmed, historical)
+  - Vegetation loss percentage
+  - Anomaly magnitude
+  - Confidence levels
+  - Date of first detection
+  - Duration of ongoing disturbance
+
+**Access:**
+- **Data format:** Cloud Optimized GeoTIFF (COG)
+- **Earth Engine:** ✅ Available! (partial/recent data, sufficient for NRT monitoring)
+  - **Collection path:** `projects/glad/HLSDIST/current/[LAYER_NAME]`
+  - **Update frequency:** Weekly (most recent composite only)
+  - **Available layers:** 14 total (9 vegetation + 5 generic disturbance)
+    - VEG-DIST-STATUS, VEG-DIST-DATE, VEG-DIST-DUR, VEG-ANOM-MAX, VEG-IND, VEG-ANOM, VEG-LAST-DATE, VEG-DIST-CONF
+    - GEN-DIST-STATUS, GEN-DIST-DATE, GEN-DIST-DUR, GEN-ANOM-MAX, GEN-ANOM
+  - **Access pattern:** ImageCollections that are `.mosaic()`'d to single images
+  - **Date encoding:** Days since 2020-12-31 (easy conversion to real dates)
+  - **Example script:** https://code.earthengine.google.com/7112eeb091539055163f90c91759d1a0
+  - ⚠️ **Limitation:** No historical time series in EE; full archive requires NASA downloads
+  - ✅ **For weekly newsletters:** Weekly updates are PERFECT - query fresh snapshot each week, no historical archive needed
+- **Download alternatives (if needed):**
+  - NASA LP DAAC Earthdata (requires free account)
+  - AWS S3 (potential cost/bandwidth optimization)
+  - NASA Earthdata API + HTTPS download
+- **Documentation:** 
+  - [Algorithm Theoretical Basis Document](https://glad.umd.edu/sites/default/files/opera-dist-product-atbd-v1-final.pdf)
+  - [Product Specification](https://glad.umd.edu/sites/default/files/D-108277_OPERA_DIST_HLS_Product_Specification_V1.0.pdf)
+  - [Visualization App](https://glad.earthengine.app/view/dist-alert)
+
+**How the Hybrid Works:**
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│ BASELINE LAYER (Dynamic World)                              │
+│ - Aggregate over 3-6 months to smooth seasonality           │
+│ - Update quarterly or biannually                            │
+│ - Provides: "Forest exists here as of Q1 2025"              │
+│ - Use for: Baseline forest extent, long-term trends         │
+└─────────────────────────────────────────────────────────────┘
+                            ↓
+┌─────────────────────────────────────────────────────────────┐
+│ CHANGE DETECTION (DIST-ALERT)                               │
+│ - Daily disturbance alerts                                  │
+│ - Detects: Vegetation loss events relative to 3yr baseline  │
+│ - Provides: "Disturbance detected on Oct 23, 2025"          │
+│ - Use for: Weekly newsletter, NRT monitoring                │
+└─────────────────────────────────────────────────────────────┘
+                            ↓
+┌─────────────────────────────────────────────────────────────┐
+│ NARRATIVE LAYER                                              │
+│ - Overlay DIST alerts on GDW baseline                       │
+│ - "250 ha of forest (baseline: Q1 2025) disturbed this week"│
+│ - Track alert→confirmation→historical status progression    │
+└─────────────────────────────────────────────────────────────┘
+```
+
+**Pros:**
+- ✅ **Separation of concerns:** Baseline (stable, low-frequency) vs Change (volatile, high-frequency)
+- ✅ **Daily updates:** DIST-ALERT enables true NRT monitoring
+- ✅ **Reduces false positives:** DIST's 3-year baseline accounts for seasonal variation
+- ✅ **Confidence levels:** Provisional → Confirmed → Historical status tracking
+- ✅ **Complementary resolutions:** 10m (GDW) for baseline, 30m (DIST) for change is acceptable trade-off
+- ✅ **Both in Earth Engine:** DIST recent data available in EE, simplifies integration
+- ✅ **Multiple download options:** NASA LP DAAC, AWS S3 for cost/bandwidth optimization
+- ✅ **Both global:** Worldwide coverage, no geographic gaps
+- ✅ **Well-validated:** DIST published in Nature Communications (2025), UMD/GLAD track record
+- ✅ **NASA-backed:** OPERA project ensures longevity and maintenance
+- ✅ **Baseline flexibility:** GDW is working assumption; alternative baseline datasets possible if better match found
+
+**Cons:**
+- ❌ **Two separate systems:** Must coordinate baseline updates with alert processing
+- ❌ **DIST in EE may be incomplete:** Recent data available, but full archive may require downloads
+- ❌ **Resolution mismatch:** 10m (GDW) vs 30m (DIST) requires spatial alignment
+- ❌ **Increased complexity:** Must manage baseline updates + alert processing logic
+- ❌ **Baseline refresh strategy:** Need to define when/how to update baseline (annually? quarterly?)
+- ❌ **Baseline dataset TBD:** GDW is placeholder; may switch to better-matched dataset during prototyping
+- ❌ **Alert interpretation:** Must understand DIST status codes and confidence levels
+- ❌ **Data freshness lag:** DIST alerts may take 1-3 days to appear in distribution system
+
+**Best for:**
+- Weekly forest change newsletters (this project!)
+- Near-real-time disturbance monitoring with stable baselines
+- Projects needing both "what's there" and "what changed" narratives
+- Use cases where daily updates matter more than 10m resolution
+- Organizations comfortable with hybrid cloud/download workflows
+
+**Worst for:**
+- Single-system simplicity (introduces architectural complexity)
+- Real-time (< 1 day) response requirements
+- Pixel-perfect 10m change detection (30m DIST may miss small clearings)
+- Projects requiring pure Earth Engine workflows
+- MVP implementations (more complex than single-source approach)
+
+**Implementation Notes:**
+
+1. **Baseline Strategy:**
+   - Generate baseline once per year (or quarter, TBD during prototyping)
+   - **Baseline dataset:** Currently assuming GDW, but open to alternatives with:
+     - 30m resolution (matches DIST)
+     - More static/stable methodology
+     - Annual or better update frequency
+   - Store as static raster for the period
+   - Use for all weekly newsletters until next baseline update
+
+2. **DIST Integration:**
+   - **Primary:** Use Earth Engine access for recent alerts (simplest integration)
+     ```python
+     # Access DIST layers in Earth Engine
+     folder = "projects/glad/HLSDIST/current"
+     veg_status = ee.ImageCollection(f"{folder}/VEG-DIST-STATUS").mosaic()
+     veg_dist_date = ee.ImageCollection(f"{folder}/VEG-DIST-DATE").mosaic()
+     veg_anom_max = ee.ImageCollection(f"{folder}/VEG-ANOM-MAX").mosaic()
+     veg_conf = ee.ImageCollection(f"{folder}/VEG-DIST-CONF").mosaic()
+     
+     # Filter for recent, high-confidence disturbances
+     days_since_2020 = (datetime.now() - datetime(2020, 12, 31)).days
+     recent_threshold = days_since_2020 - 7  # Last 7 days
+     recent_dist = veg_dist_date.gte(recent_threshold).And(veg_status.gte(1))
+     ```
+   - **Backup:** Set up download workflow from NASA LP DAAC or AWS S3 if EE coverage insufficient
+   - Filter alerts within our regions of interest
+   - Cross-reference with current baseline
+   - Track alert status progression (provisional → confirmed → historical)
+
+3. **Narrative Template:**
+   ```
+   "This week, DIST-ALERT detected 450 hectares of vegetation disturbance
+   in the São Felix do Xingu region. Of this, 320 hectares occurred in 
+   areas classified as forest in our 2025 baseline, representing a 2.1% 
+   loss of the region's forest cover. The largest single event (85 ha) 
+   was first detected on October 23 and confirmed on October 25."
+   ```
+
+**Status:** Proposed for prototyping phase. Requires feasibility testing of:
+- DIST Earth Engine access: coverage, update frequency, historical depth
+- Baseline dataset selection (GDW vs alternatives)
+- Spatial overlay of 30m DIST alerts on baseline
+- Alert status tracking and narrative generation logic
+- Performance and cost optimization (EE vs download workflows)
 
 ---
 

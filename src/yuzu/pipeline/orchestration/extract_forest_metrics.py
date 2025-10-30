@@ -18,7 +18,7 @@ from yuzu.config import get_settings
 
 # Forest classification threshold
 # Pixels with tree probability > FOREST_THRESHOLD are considered forest
-FOREST_THRESHOLD = 0.5
+FOREST_THRESHOLD = 0.15
 
 # Region of Interest: Amazon (Pará/Amazonas border)
 # GeoJSON polygon defining the area to analyze
@@ -77,8 +77,8 @@ REGION_GEOJSON = {
 
 # Time periods for analysis
 # Script will generate monthly composites for each month in this range
-ANALYSIS_START = "2025-01-01"
-ANALYSIS_END = "2025-10-25"  # End date (exclusive)
+ANALYSIS_START = "2024-01-01"
+ANALYSIS_END = "2025-10-30"  # End date (exclusive)
 
 # Aggregation window in days (default: ~30 days for monthly)
 AGGREGATION_WINDOW_DAYS = 30
@@ -123,13 +123,13 @@ def get_region_geometry() -> Any:
 
 
 def calculate_forest_area(
-    region: Any,
-    start_date: str,
-    end_date: str,
-    threshold: float = FOREST_THRESHOLD,
-    enable_gap_filling: bool = True,
-    max_lookback_days: int = 180,
-    total_region_m2: float = 0,
+        region: Any,
+        start_date: str,
+        end_date: str,
+        threshold: float = FOREST_THRESHOLD,
+        enable_gap_filling: bool = True,
+        max_lookback_days: int = 180,
+        total_region_m2: float = 0,
 ) -> tuple[float, int, float, float]:
     """Calculate forest area for a given time period with adaptive gap-filling.
 
@@ -325,9 +325,9 @@ def calculate_forest_area(
 
 
 def generate_time_periods(
-    start_date: str,
-    end_date: str,
-    window_days: int,
+        start_date: str,
+        end_date: str,
+        window_days: int,
 ) -> list[tuple[str, str]]:
     """Generate time periods for analysis.
 
@@ -360,8 +360,8 @@ def generate_time_periods(
 
 
 def format_time_series_output(
-    time_series: list[tuple[str, str, float, int, float, float]],
-    total_region_area: float,
+        time_series: list[tuple[str, str, float, int, float, float]],
+        total_region_area: float,
 ) -> str:
     """Format time series metrics for console output.
 
@@ -390,7 +390,7 @@ MONTHLY FOREST AREA MEASUREMENTS
 
     # Calculate period-over-period changes
     for i, (start, end, area, img_count, current_covered_ha, final_covered_ha) in enumerate(
-        time_series
+            time_series
     ):
         period_label = f"Period {i + 1}"
         current_coverage_pct = (

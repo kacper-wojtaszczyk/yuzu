@@ -1,6 +1,6 @@
 # Yuzu Methodology
 
-**Last Updated:** October 27, 2025  
+**Last Updated:** October 30, 2025  
 **Status:** Living document—will evolve as we learn and expand
 
 ---
@@ -13,7 +13,15 @@ This document explains how Yuzu works with forest data and generates narratives.
 
 ## Data Sources
 
-### TBD
+### Selection Criteria
+
+Yuzu prioritizes data sources that are:
+- **Accessible:** Clear API/SDK, good documentation, reasonable rate limits
+- **Maintained:** Active development, responsive maintainers, clear roadmap
+- **Consistent:** Same methodology across time periods
+- **Transparent:** Documented algorithms, validation, known limitations
+
+Specific datasets are documented in Architecture Decision Records (ADRs) in `docs/adr/`. Currently under evaluation: see [ADR-001](adr/ADR-001-real-time-forest-change-detection.md).
 
 ---
 
@@ -21,21 +29,24 @@ This document explains how Yuzu works with forest data and generates narratives.
 
 ### Area Calculations
 
-All area calculations use **geodesic area** accounting for Earth's curvature:
-- Pixel area varies from ~900 m² at equator to ~200 m² near poles
-- We calculate exact geodesic area per pixel using Earth Engine's built-in methods
+All area calculations account for Earth's curvature:
+- Geodesic area is calculated per pixel (area varies with latitude)
 - Areas are summed within regions of interest (countries, custom polygons)
+- Results reported in hectares (ha)
 
-### Tree Cover Threshold
+### Classification and Thresholds
 
-By default, we use **30% canopy density threshold**, matching GFW and most forest monitoring literature. This means:
-- Pixels with ≥30% tree cover are considered "tree cover"
+Forest classification depends on the source dataset methodology:
+- Where applicable, we document threshold values used (e.g., probability cutoffs, canopy density)
+- We prefer using the most probable class or highest confidence classification
+- Threshold selection is documented and justified in ADRs
 
 ### Regional Aggregation
 
-Currently, we aggregate data by:
+We aggregate data by:
 - **Custom polygons:** User-defined regions stored in PostGIS database
-- **Administrative boundaries:** Using ISO country codes (future)
+- **Administrative boundaries:** Using standard geographic identifiers
+- **Ecological boundaries:** When relevant and well-defined
 
 No attempt is made to reclassify land use, distinguish natural from planted forests, or infer causality of loss. We report what the satellite data shows.
 
@@ -46,18 +57,18 @@ No attempt is made to reclassify land use, distinguish natural from planted fore
 ### Schema Design Philosophy
 
 Our PostgreSQL + PostGIS database stores:
-- **Raw metrics from Earth Engine:** tree cover area, loss by year, gain total
-- **Calculated derived metrics:** percent loss, annual rates
+- **Source metrics:** Data as provided by satellite/remote sensing sources
+- **Calculated derived metrics:** Aggregations, rates, percentages computed from source data
 - **Spatial geometries:** Regions of interest as PostGIS polygons
-- **Metadata:** Data extraction timestamps, source dataset versions
+- **Metadata:** Data extraction timestamps, source dataset versions, processing parameters
 
 **What we don't invent:**
-- No "current forest cover" calculations (requires assumptions about gain/loss overlap)
+- No metrics that require unsupported assumptions about the data
 - No land-use classifications beyond what source data provides
-- No interpolation or gap-filling
+- No interpolation or gap-filling (unless explicitly documented)
 - No predictive modeling
 
-If a metric can't be directly computed from data, we don't store it.
+**Principle:** If a metric can't be directly computed or clearly derived from source data with documented methodology, we don't store it.
 
 ---
 
@@ -120,18 +131,18 @@ The goal is WRI-style data storytelling but with AI speed and weekly cadence.
 
 ### What Yuzu Can Tell You
 
-- How much tree canopy was lost in a region, by year
-- How loss rates are changing over time
-- Comparative rankings (which regions lost most)
-- Trends over the dataset timespan (?-current)
+- Forest disturbance and change events within monitored regions
+- Temporal trends based on available data timespan
+- Comparative analysis between regions
+- Changes relative to documented baselines
 
 ### What Yuzu Cannot Tell You
 
-- **Why loss occurred:** Fire, logging, agriculture, natural disturbance? Currently out of scope of our data we collect
-- **Current forest cover:** There is no reliable way to combine loss and gain data to infer current cover
-- **Forest quality or biodiversity:** Tree cover is one-dimensional
-- **Socioeconomic impacts:** We don't model human displacement, economic costs, carbon markets, etc. (yet)
-- **Future projections:** We report historical data, not predictions
+- **Why loss occurred:** Fire, logging, agriculture, natural disturbance? Causality requires additional data and analysis
+- **Complete ground truth:** Satellite data has inherent limitations (cloud cover, resolution, classification errors)
+- **Forest quality or biodiversity:** Remote sensing captures structure, not ecological richness
+- **Socioeconomic impacts:** We don't model human displacement, economic costs, carbon markets, etc.
+- **Future projections:** We report historical and near-real-time data, not predictions
 
 ### The LLM Uncertainty Factor
 
@@ -144,7 +155,7 @@ The goal is WRI-style data storytelling but with AI speed and weekly cadence.
 **Our mitigation strategy:**
 - Strict fact-grounding validation (every number must be traceable)
 - Short narrative formats reduce drift
-- Human review of samples (at least 10% of generated content)
+- Human review of all generated content (for the time being)
 - Transparent labeling: readers know narratives are AI-generated
 
 **We are experimenting with AI journalism.** Mistakes will happen. When they do, we'll document them and improve the process.
@@ -155,20 +166,23 @@ The goal is WRI-style data storytelling but with AI speed and weekly cadence.
 
 ### Data Pipeline Validation
 
-- **Automated tests:** Every data extraction includes sanity checks (e.g., loss can't exceed 2000 baseline)
-- **Comparison to GFW:** Spot-check our calculated totals against Global Forest Watch dashboard
-- **Version tracking:** Log Earth Engine dataset version for each extraction
+- **Automated tests:** Every data extraction includes sanity checks appropriate to the data source
+- **Cross-validation:** Where possible, compare results against established monitoring systems
+- **Version tracking:** Log source dataset versions and processing parameters for each extraction
+- **Coverage monitoring:** Track data availability and quality metrics per region
 
 ### Narrative Validation
 
 - **Human review** of all narratives before publication
-- **User feedback loop** Readers can flag suspect claims
-- **Prose quality, readability, emotional impact** (subjective)
+- **Fact grounding verification:** All quantitative claims traced to source data
+- **User feedback loop:** Readers can flag suspect claims
+- **Quality assessment:** Prose clarity, readability, emotional impact (subjective but documented)
 
 ### What We Don't Validate (Yet)
 
 - Cultural appropriateness of framing (requires domain expertise)
 - Deep fact-checking beyond numeric claims (e.g., historical context)
+- Long-term reproducibility across dataset methodology changes
 
 ---
 
@@ -197,8 +211,12 @@ As Yuzu grows, so will this methodology. Updates might include:
 
 ## References
 
-- Hansen, M. C., et al. (2013). High-resolution global maps of 21st-century forest cover change. *Science*, 342(6160), 850-853. [https://doi.org/10.1126/science.1244693](https://doi.org/10.1126/science.1244693)
-- Tyukavina, A., et al. (2022). Global trends of forest loss due to fire from 2001 to 2019. *Frontiers in Remote Sensing*, 3. [https://doi.org/10.3389/frsen.2022.825190](https://doi.org/10.3389/frsen.2022.825190)
+Dataset-specific citations and technical references are maintained in:
+- **Architecture Decision Records:** `docs/adr/` for data source decisions
+- **Code documentation:** Inline citations in processing modules
+- **Generated narratives:** Source attribution for each published story
+
+This approach ensures references stay current as data sources evolve.
 - Global Forest Watch. [https://www.globalforestwatch.org/](https://www.globalforestwatch.org/)
 - Google Earth Engine Data Catalog: Hansen Global Forest Change. [https://developers.google.com/earth-engine/datasets/catalog/UMD_hansen_global_forest_change_2023_v1_11](https://developers.google.com/earth-engine/datasets/catalog/UMD_hansen_global_forest_change_2023_v1_11)
 
