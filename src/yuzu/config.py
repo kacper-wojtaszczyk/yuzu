@@ -73,6 +73,20 @@ class Settings(BaseSettings):
     llm_api_key: str | None = Field(default=None, description="LLM API key")
     llm_model: str = Field(default="gpt-4", description="LLM model name")
 
+    # Google Earth Engine
+    gee_project_id: str = Field(
+        default="yuzu-etl",
+        description="Google Earth Engine project ID",
+    )
+    gee_service_account_email: str | None = Field(
+        default=None,
+        description="GEE service account email for automated authentication",
+    )
+    gee_private_key_path: str | None = Field(
+        default=None,
+        description="Path to GEE service account private key JSON",
+    )
+
 
 @lru_cache
 def get_settings() -> Settings:
