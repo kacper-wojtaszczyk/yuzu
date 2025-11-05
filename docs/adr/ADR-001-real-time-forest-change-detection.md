@@ -531,31 +531,84 @@ A prototype pipeline (`src/yuzu/pipeline/orchestration/extract_forest_metrics.py
 
 ## Decision
 
-**[PLACEHOLDER: Selected data source and rationale]**
+**Status Update (2025-11-05):** After extensive prototyping with Google Dynamic World and evaluating hybrid approaches, **we are pivoting away from building a standalone data pipeline**.
 
-We will use **[Source Name]** as our primary forest data source because:
+### The Pivot: Fork project-zeno Instead
 
-1. [Key reason 1]
-2. [Key reason 2]
-3. [Key reason 3]
+**Discovery:** The [WRI project-zeno (Global Nature Watch)](https://github.com/wri/project-zeno) already solves the core data access and narrative generation problems we've been struggling with:
 
-### What We're Building (Initially)
+- ✅ Integrated data access to GFW/WRI APIs and datasets
+- ✅ LangGraph-based AI agent that generates compelling narratives
+- ✅ RAG system for dataset selection
+- ✅ Handles cloud coverage, seasonality, and data quality issues
+- ✅ Production-ready API with quota management
+- ✅ Open source (MIT license)
+- ✅ Actively maintained by WRI
 
-**[PLACEHOLDER: Minimal viable data pipeline description]**
+### New Direction: Narrative Experimentation Layer
 
-- Extract [what data] from [source]
-- Store [which metrics] in [format/database]
-- Enable queries like: [example question 1], [example question 2]
+Rather than reinventing data pipelines, **Yuzu becomes a fork of project-zeno focused on experimental narrative formats**:
+
+**What project-zeno does well:**
+- Factual, comprehensive forest change reporting
+- Multi-source data integration
+- Interactive chatbot interface
+- Standard analytical narratives
+
+**What Yuzu will add (as new agent tools):**
+1. **Soundscape Generator**: Audio representations of forest loss/presence
+2. **Haiku/Micro-poetry Generator**: Ultra-constrained literary formats
+3. **Speculative Fiction Engine**: "What if" narratives and counterfactual stories
+4. **Parallel Earths Simulator**: Alternate timeline visualizations
+5. **Image Generation** (stretch): Visual storytelling based on forest data
+
+### Why This Makes Sense
+
+**For Learning:**
+- Learn from production-quality Python/data science code
+- Understand real-world LangGraph agent architecture
+- Contribute to established open source project
+- Build portfolio relevant to conservation tech work
+
+**For Ethics:**
+- Clear attribution (fork, not wrapper)
+- Add complementary value (experimental narratives, not competing features)
+- Natural contribution path back to upstream
+- Transparent about derivative work
+
+**For Impact:**
+- Faster time to value (weeks vs months)
+- Focus on creative storytelling, not data plumbing
+- Potential for upstream adoption of narrative tools
+- Career development: WRI is dream employer
+
+### What We're Building
+
+**Phase 1: Fork & Learn (Weeks 1-2)**
+- Fork `wri/project-zeno` as separate repository
+- Document onboarding learnings
+- Understand agent architecture and tool system
+- Run through existing examples
+
+**Phase 2: First Narrative Tool (Weeks 3-4)**
+- Implement one experimental narrative generator as new agent tool
+- Starting candidate: Haiku Generator (simplest to build)
+- Use existing data access patterns from project-zeno
+- Add new output format to agent responses
+
+**Phase 3: Document & Share (Weeks 5-6)**
+- Write up additions and design rationale
+- Open discussions/issues on project-zeno repo
+- Share with WRI/GFW community
+- Identify opportunities to contribute back
 
 ### What We're Explicitly NOT Doing
 
-**[PLACEHOLDER: Anti-scope to avoid over-engineering]**
-
-- NOT merging multiple inconsistent data sources
-- NOT inventing derived metrics without clear methodology
-- NOT building real-time monitoring (unless source naturally supports it)
-- NOT attempting to build ML models for change detection
-- NOT [other tempting features to avoid]
+- NOT competing with Global Nature Watch chatbot
+- NOT building our own data ingestion pipelines
+- NOT reimplementing RAG or agent architecture
+- NOT trying to be comprehensive (focus on creative experiments)
+- NOT hiding the fork relationship (transparent attribution)
 
 ---
 
@@ -563,27 +616,60 @@ We will use **[Source Name]** as our primary forest data source because:
 
 ### Positive
 
-**[PLACEHOLDER: Expected benefits]**
+**Learning:**
+- Deep dive into production LangGraph code
+- Experience with real-world data science workflows
+- Understanding of WRI/GFW ecosystem
+- Portfolio piece directly relevant to conservation tech
 
-- [Benefit 1]
-- [Benefit 2]
-- [Benefit 3]
+**Technical:**
+- Inherits stable data access patterns
+- Cloud coverage and seasonality already handled
+- Production-ready infrastructure (PostgreSQL, Langfuse, eoAPI)
+- Well-tested agent framework
+
+**Strategic:**
+- Natural conversation starter with WRI team
+- Contribution opportunities identified through usage
+- Faster path to meaningful work than building from scratch
+- Career development aligned with dream employer
 
 ### Negative
 
-**[PLACEHOLDER: Accepted limitations and tradeoffs]**
+**Dependencies:**
+- Coupled to project-zeno's architecture decisions
+- Updates upstream may require adaptation
+- Limited control over core data access patterns
+- Platform lock-in (their chosen tech stack)
 
-- [Limitation 1]
-  - **Mitigation:** [How we'll handle it]
-- [Limitation 2]
-  - **Mitigation:** [How we'll handle it]
+**Mitigation:**
+- Keep narrative tools modular (easy to extract if needed)
+- Document any architecture concerns for upstream feedback
+- Maintain clear fork provenance for potential re-integration
+- Focus on additions, not modifications to core
+
+**Scope:**
+- Requires understanding large existing codebase before contributing
+- May discover limitations in extensibility
+- Creative experiments may not align with upstream priorities
+
+**Mitigation:**
+- Start with simple, non-invasive additions
+- Engage with maintainers early about extension points
+- Document extension patterns for other contributors
+- Keep experimental features clearly separated
 
 ### Technical Debt
 
-**[PLACEHOLDER: Things we're deferring or will need to revisit]**
+**Accepted:**
+- GDW prototype code remains in Yuzu repo as research documentation
+- This ADR documents path not taken (valuable learning)
+- No immediate plans to contribute GDW findings to project-zeno (yet)
 
-- [Debt item 1]
-- [Debt item 2]
+**To Monitor:**
+- Upstream project-zeno changes that affect our extensions
+- Whether narrative tools gain traction (worth maintaining fork?)
+- Opportunities to merge experimental features upstream
 
 ---
 
@@ -591,60 +677,118 @@ We will use **[Source Name]** as our primary forest data source because:
 
 Review this decision if:
 
-- **API reliability drops below [X]%** or documentation degrades (measured how?)
-- **Update frequency changes** significantly (delays or stops)
-- **Methodology changes** in ways that break historical comparisons
-- **Better alternative emerges** with clearer API and more actionable data
-- **Geographic coverage** no longer meets Yuzu's needs
-- **Cost or rate limits** become prohibitive
-- **Community/maintainer support** disappears
-- **I will be in the mood** for ML algorithms and custom change detection
+- **project-zeno becomes unmaintained** or significantly changes direction
+- **Fork divergence becomes too large** to track upstream changes
+- **Narrative experiments prove unsuitable** for their architecture
+- **WRI expresses interest/disinterest** in experimental narrative features
+- **Better contribution opportunities emerge** in different parts of ecosystem
+- **Career goals shift** away from WRI/conservation tech
+- **Yuzu gains independent identity** that warrants standalone project
 
 ---
 
 ## Implementation Notes
 
-**[PLACEHOLDER: First steps and technical setup]**
+### Repository Structure
 
-### Initial Setup
-```bash
-# [Authentication/API key setup]
-# [SDK installation]
-# [Test query examples]
-```
+**New repository:** `kacper/project-zeno-narrative-experiments` (or similar name)
+- Fork of `wri/project-zeno`
+- Clear README explaining relationship and narrative focus
+- Maintain sync with upstream (regular merges)
+- Custom narrative tools in `/src/narrative_tools/` or similar
 
-### Data Schema (Minimal)
-```sql
--- [Placeholder for initial database schema]
--- Focus on storing what the API gives us, not inventing fields
-```
+**Yuzu repository future:**
+- Archived or pivoted to documentation/research
+- GDW prototype remains as learning reference
+- This ADR documents the pivot decision
+- Links to new narrative experiments repo
 
-### First Query
+### First Narrative Tool: Architecture Pattern
+
 ```python
-# [Placeholder for simplest possible data extraction]
-# Goal: Prove we can reliably pull data for one region
+# Example: Haiku generator tool for their agent
+
+from langchain.tools import tool
+from src.narrative_tools.haiku import HaikuGenerator
+
+@tool
+def generate_forest_haiku(
+    forest_loss_ha: float,
+    region_name: str,
+    time_period: str,
+    **kwargs
+) -> str:
+    """
+    Generate a haiku about forest loss using constrained poetic format.
+    
+    Uses the same data their agent already queries, but transforms
+    into ultra-short poetic form (5-7-5 syllable structure).
+    """
+    generator = HaikuGenerator()
+    return generator.create_haiku(
+        loss_hectares=forest_loss_ha,
+        location=region_name,
+        period=time_period
+    )
 ```
+
+### Contribution Strategy
+
+1. **Build in fork first** (prove value before proposing upstream)
+2. **Document thoroughly** (show it's production-ready)
+3. **Share via discussions** (gauge interest before PR)
+4. **Open issues for feedback** ("I built X, would this be useful?")
+5. **Attend community calls** (if they have them)
+6. **PR if requested** (don't force contribution)
 
 ---
 
 ## References
 
-**[PLACEHOLDER: Documentation and research links]**
+**project-zeno:**
+- Repository: https://github.com/wri/project-zeno
+- API Docs: https://api.globalnaturewatch.org/docs
+- Agent Architecture: `/docs/AGENT_ARCHITECTURE.md`
+- License: MIT
 
-- [Data source official docs]
-- [API reference]
-- [Relevant papers or methodology docs]
-- [Example notebooks or community projects]
+**Related WRI Projects:**
+- Global Nature Watch: https://globalnaturewatch.org
+- Global Forest Watch: https://globalforestwatch.org
+- OPERA DIST-ALERT: https://glad.umd.edu/dataset/DIST-ALERT/
+
+**Our Research:**
+- Google Dynamic World prototype: `/src/yuzu/pipeline/orchestration/extract_forest_metrics.py`
+- GDW experimental results: This ADR, "Experimental Results" section
+- Seasonality findings: High volatility (44.4%) despite gap-filling
 
 ---
 
-
 ## Follow-up Tasks
 
-**[PLACEHOLDER: Immediate next steps after decision]**
+**Immediate (Week 1):**
+1. [x] Update this ADR with fork decision
+2. [ ] Create copilot instructions for narrative experiments fork
+3. [ ] Fork project-zeno to new repository
+4. [ ] Set up local development environment
+5. [ ] Run through their examples and document learnings
 
-1. [ ] Set up API access / authentication
-2. [ ] Design minimal database schema for chosen data
-3. [ ] Implement single-region extraction as proof of concept
-4. [ ] Validate data quality and update frequency claims
-5. [ ] Document any surprises or gotchas discovered during integration
+**Short-term (Weeks 2-4):**
+6. [ ] Choose first narrative tool to implement (haiku vs soundscape)
+7. [ ] Design tool interface following their patterns
+8. [ ] Implement first prototype
+9. [ ] Test with real data from their agent
+10. [ ] Document extension pattern for others
+
+**Medium-term (Weeks 5-8):**
+11. [ ] Write blog post about fork and additions
+12. [ ] Share in project-zeno discussions
+13. [ ] Open issues for feedback
+14. [ ] Identify contribution opportunities in core project
+15. [ ] Build 2-3 more narrative tools
+
+**Long-term (Ongoing):**
+16. [ ] Maintain sync with upstream project-zeno
+17. [ ] Engage with WRI/GFW community
+18. [ ] Contribute documentation or fixes to upstream
+19. [ ] Explore employment/collaboration opportunities
+20. [ ] Consider whether Yuzu should remain separate or fully merge
